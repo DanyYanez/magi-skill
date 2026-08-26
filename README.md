@@ -17,6 +17,8 @@
 
 A Claude Code skill that launches **three parallel sub-agents** — Melchior, Balthasar, and Casper — each reviewing your code from a distinct perspective. Just like NERV's MAGI in Evangelion, the three deliberate independently and the main system synthesizes the verdict.
 
+> **New in v2** — Reports are now persisted to `.magi/report.md` in the target repo and carry over between runs. Findings you mark as `false positive`, `by design`, or `fixed` won't be re-reported next time. See [CHANGELOG](CHANGELOG.md).
+
 ### The three MAGI
 
 | MAGI | Persona | Focus areas |
@@ -104,6 +106,8 @@ MIT — see [LICENSE](LICENSE). You can use, modify and redistribute freely; jus
 ### ¿Qué es esto?
 
 Un skill de Claude Code que lanza **tres sub-agentes en paralelo** — Melchior, Balthasar y Casper — cada uno revisando tu código desde una perspectiva distinta. Igual que el sistema MAGI de NERV en Evangelion, los tres deliberan por separado y el sistema principal sintetiza el veredicto.
+
+> **Nuevo en v2** — Los reportes se guardan en `.magi/report.md` en el repo target y persisten entre corridas. Los hallazgos que marques como `falso positivo`, `by design` o `fixed` no vuelven a reportarse. Ver [CHANGELOG](CHANGELOG.md).
 
 ### Los tres MAGI
 
