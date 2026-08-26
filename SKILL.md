@@ -1,131 +1,158 @@
 ---
 name: magi
-description: Lanza 3 sub-agentes en paralelo (Melchior, Balthasar, Casper) inspirados en el sistema MAGI de Evangelion. Cada uno revisa código/PRs/features desde 3 enfoques distintos y devuelve hallazgos clasificados por severidad. Claude Code sintetiza los 3 reportes en uno solo y el usuario decide qué corregir. Úsalo cuando el usuario invoque /magi, pida un "code review profundo", quiera análisis multi-perspectiva, o diga "lanzar los magi" sobre un archivo, diff, PR o feature.
+description: Launches 3 parallel sub-agents (Melchior, Balthasar, Casper) inspired by NERV's MAGI system from Neon Genesis Evangelion. Each reviews code/PRs/features from a distinct perspective and returns severity-classified findings. Claude Code synthesizes all three into a single report and persists it to `.magi/report.md` so future runs can skip already-resolved findings. Use when the user invokes /magi, asks for a "deep code review", wants multi-perspective analysis, or says "launch the magi" on a file, diff, PR or feature.
 ---
 
-# MAGI — Sistema de revisión multi-perspectiva
+# MAGI — Multi-perspective review system
 
-Inspirado en los tres supercomputadoras MAGI de NERV en Neon Genesis Evangelion (Melchior, Balthasar, Casper). Cada agente representa una faceta de análisis diferente. Los tres trabajan **en paralelo, sin contexto previo de la conversación**, y entregan hallazgos clasificados por severidad. Tú (Claude Code) sintetizas los reportes y los presentas al usuario en un único informe consolidado.
-
----
-
-## Cuándo usar
-
-Invoca este skill cuando:
-- El usuario escribe `/magi` o "lanza los magi" sobre código, un archivo, un diff o un PR
-- Pide un "code review profundo", "análisis multi-perspectiva" o "revisión completa"
-- Quiere validar arquitectura, seguridad, performance y UX a la vez
-- Necesita una segunda (tercera, cuarta) opinión antes de mergear o desplegar
-
-NO uses este skill para:
-- Preguntas simples de código (responde directo)
-- Bugs específicos con causa obvia (debug normal)
-- Tareas de implementación (no es review)
+Inspired by NERV's three MAGI supercomputers in Neon Genesis Evangelion (Melchior, Balthasar, Casper). Each agent represents a different facet of analysis. All three run **in parallel, without prior conversation context**, and deliver findings classified by severity. You (Claude Code) synthesize the reports, present them in a single consolidated report, and persist that report to `.magi/report.md` so future runs carry state forward.
 
 ---
 
-## Idioma
+## When to use
 
-**Detecta el idioma de la conversación** y úsalo en TODA la salida (prompts a los agentes, reporte final, encabezados). Si la conversación está en español, todo en español. Si está en inglés, todo en inglés. Si hay duda, pregunta una vez.
+Invoke this skill when:
+- The user types `/magi` or "launch the magi" on code, a file, a diff or a PR
+- Asks for a "deep code review", "multi-perspective analysis" or "full review"
+- Wants to validate architecture, security, performance and UX at once
+- Needs a second (third, fourth) opinion before merging or deploying
 
----
-
-## Los 3 agentes
-
-### 🧠 Melchior — el científico (análisis racional)
-Enfoques:
-- **Lógica & Correctness** — bugs, edge cases, condiciones mal manejadas, lógica rota
-- **Arquitectura & Diseño de sistema** — capas, separación de responsabilidades, patrones
-- **Acoplamiento & SOLID** — dependencias, cohesión, principios de diseño
-
-Lee: `agents/melchior.md`
-
-### 🛡️ Balthasar — la madre (protección)
-Enfoques:
-- **Seguridad & Vulnerabilidades** — inyecciones, autenticación, datos sensibles, OWASP
-- **Testing & Edge cases** — cobertura, casos límite, escenarios de falla
-- **Best practices & Convenciones** — estándares del lenguaje/framework, anti-patterns
-
-Lee: `agents/balthasar.md`
-
-### ✨ Casper — la mujer (intuición/experiencia)
-Enfoques:
-- **Performance & Escalabilidad** — complejidad, queries, recursos, cuellos de botella
-- **UX & Diseño visual** — usabilidad, accesibilidad, jerarquía visual (si aplica)
-- **Mantenibilidad & Legibilidad (DX)** — claridad, deuda técnica, experiencia del próximo dev
-
-Lee: `agents/casper.md`
+Do NOT use for:
+- Simple code questions (answer directly)
+- Specific bugs with an obvious cause (normal debug)
+- Implementation tasks (this is review, not build)
 
 ---
 
-## Flujo de ejecución
+## Language
 
-### Paso 1 — Identificar el target
-Pregunta al usuario qué revisar si no es obvio:
-- Archivo(s) específico(s)
-- Diff/PR (`git diff`, `git diff main`, número de PR)
-- Feature completa (varios archivos relacionados)
-- Carpeta o módulo
+**Detect the conversation language** and use it in ALL output (agent prompts, final report, headers). If the conversation is in Spanish, everything in Spanish. If in English, everything in English. If unsure, ask once.
 
-Si el target es un PR remoto, usa `gh pr diff <num>` para obtener el diff.
+---
 
-### Paso 2 — Lanzar los 3 agentes EN PARALELO
-Usa la herramienta Task (subagent_type: general-purpose) **en una sola llamada** con 3 invocaciones simultáneas. Cada una:
+## The 3 agents
 
-1. Lee el contenido de su archivo de rol (`agents/melchior.md`, `agents/balthasar.md`, `agents/casper.md`)
-2. Recibe el target (paths absolutos de archivos, diff completo en el prompt, o instrucción de leer)
-3. Devuelve un reporte estructurado en el formato definido abajo
+### 🧠 Melchior — the scientist (rational analysis)
+Focus:
+- **Logic & correctness** — bugs, edge cases, mishandled conditions, broken logic
+- **Architecture & system design** — layers, separation of concerns, patterns
+- **Coupling & SOLID** — dependencies, cohesion, design principles
 
-**Crítico:** los agentes son AGNÓSTICOS. No comparten contexto entre sí ni con la conversación principal. Pásales solo:
-- Su archivo de rol
-- El código/diff a revisar (paths o contenido)
-- El idioma de salida
+Read: `agents/melchior.md`
 
-### Paso 3 — Sintetizar
-Cuando los 3 reportes regresen, NO los muestres tal cual. Genera UN solo reporte consolidado con esta estructura:
+### 🛡️ Balthasar — the mother (protection)
+Focus:
+- **Security & vulnerabilities** — injections, authentication, sensitive data, OWASP
+- **Testing & edge cases** — coverage, boundary cases, failure scenarios
+- **Best practices & conventions** — language/framework standards, anti-patterns
+
+Read: `agents/balthasar.md`
+
+### ✨ Casper — the woman (intuition / experience)
+Focus:
+- **Performance & scalability** — complexity, queries, resources, bottlenecks
+- **UX & visual design** — usability, accessibility, visual hierarchy (if applicable)
+- **Maintainability & readability (DX)** — clarity, tech debt, next-dev experience
+
+Read: `agents/casper.md`
+
+---
+
+## Execution flow
+
+### Step 1 — Identify the target
+Ask the user what to review if not obvious:
+- Specific file(s)
+- Diff/PR (`git diff`, `git diff main`, PR number)
+- Full feature (multiple related files)
+- Folder or module
+
+If the target is a remote PR, use `gh pr diff <num>` to get the diff.
+
+### Step 2 — Launch the 3 agents IN PARALLEL
+Use the Task tool (subagent_type: general-purpose) **in a single call** with 3 simultaneous invocations. Each one:
+
+1. Reads its role file (`agents/melchior.md`, `agents/balthasar.md`, `agents/casper.md`)
+2. Receives the target (absolute file paths, full diff in the prompt, or read instruction)
+3. Returns a structured report in the format defined below
+
+**Critical:** the agents are AGNOSTIC. They share no context with each other or with the main conversation. Pass them only:
+- Their role file
+- The code/diff to review (paths or content)
+- The output language
+
+### Step 3 — Load previous report (if it exists)
+Look for `.magi/report.md` in the target root. If it exists:
+1. Read it and build a set of already-closed findings (marked `false positive`, `by design`, or `fixed: ...`).
+2. You'll pass them to synthesis to filter duplicates.
+
+### Step 4 — Synthesize + persist
+When the 3 reports return:
+1. Discard findings already closed in the previous report (match by file:line + similar title).
+2. Keep `pending` findings from the previous report.
+3. Write/update `.magi/report.md` using the format below (create `.magi/` if it doesn't exist).
+4. Show the consolidated report to the user **on screen** (don't just dump the path, show content).
+
+## Persistent report format (`.magi/report.md`)
 
 ```
-# 🔮 Reporte MAGI
+# 🔮 MAGI Report
 
-**Target:** <archivo/PR/feature>
-**Idioma:** <es/en>
+**Target:** <file/PR/feature>
+**Last run:** <YYYY-MM-DD HH:MM>
+**Total runs:** <N>
 
-## Resumen ejecutivo
-<2-3 líneas: qué tan crítico es el estado, cuántos hallazgos por severidad>
+## Summary
+<2-3 lines>
 
-## Hallazgos por severidad
+## 🔴 Critical
 
-### 🔴 Críticos (N)
-1. **[Melchior/Balthasar/Casper]** <título> — <archivo:línea>
-   <descripción corta>
-   _Sugerencia:_ <qué hacer>
+### [PENDING] <title> — <file:line>
+- **Agent:** Melchior / Balthasar / Casper
+- **Description:** <short>
+- **Suggestion:** <what to do>
+- **Status:** `pending`
 
-### 🟡 Medios (N)
-...
+### [FIXED] <title> — <file:line>
+- **Agent:** ...
+- **Description:** ...
+- **Status:** `fixed`
+- **How:** <fix summary>
 
-### 🟢 Menores (N)
-...
+### [FALSE POSITIVE] <title> — <file:line>
+- **Status:** `false positive`
+- **Reason:** <why it doesn't apply>
 
-## Vista por agente
-- 🧠 **Melchior:** <1 línea con su veredicto general>
-- 🛡️ **Balthasar:** <1 línea>
-- ✨ **Casper:** <1 línea>
+### [BY DESIGN] <title> — <file:line>
+- **Status:** `by design`
+- **Reason:** <requirement/decision>
 
-## Próximo paso
-<Pregunta al usuario qué quiere abordar primero. NO empieces a corregir.>
+## 🟡 Medium
+(same format)
+
+## 🟢 Minor
+(same format)
 ```
 
-### Paso 4 — Esperar decisión del usuario
-Después del reporte, **PARA**. No hagas cambios automáticos. Pregunta cuál hallazgo abordar primero. El usuario decide.
+Valid statuses: `pending` | `false positive` | `by design` | `fixed`.
+The tag at the start of the title (in brackets) reflects the status for quick search.
+
+### Step 5 — Wait for user decision + update the md
+After showing the report, **STOP**. Do not make automatic changes. Ask which finding to tackle first. The user decides.
+
+When the user marks a finding (`false positive` / `by design` / `fixed`), update `.magi/report.md` in the same moment (inline edit on the file, do not rewrite the whole thing).
 
 ---
 
-## Reglas no negociables
+## Non-negotiable rules
 
-1. **Siempre los 3 agentes en paralelo.** Nunca secuencial.
-2. **Agentes sin contexto previo.** No les pases historia de la conversación.
-3. **Severidad obligatoria** en cada hallazgo: 🔴 crítico / 🟡 medio / 🟢 menor.
-4. **Un solo reporte final.** No vuelques los 3 reportes crudos.
-5. **NO corrijas nada automáticamente.** El usuario decide qué tocar.
-6. **Idioma consistente** en toda la salida según la conversación.
-7. **Cita archivo:línea** en cada hallazgo cuando sea posible.
+1. **Always the 3 agents in parallel.** Never sequential.
+2. **Agents without prior context.** Don't pass them conversation history.
+3. **Severity is mandatory** on each finding: 🔴 critical / 🟡 medium / 🟢 minor.
+4. **One final report.** Do not dump the 3 raw reports.
+5. **DO NOT fix anything automatically.** The user decides what to touch.
+6. **Language consistent** in all output per the conversation.
+7. **Cite file:line** on each finding when possible.
+8. **One persistent report per target.** Always `.magi/report.md` at the root.
+9. **Filter closed findings** at the start of each run (do not re-report `false positive` / `by design` / `fixed`).
+10. **Update the md on the fly** when the user marks status changes.
