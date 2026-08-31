@@ -76,15 +76,15 @@ Use the Task tool (subagent_type: general-purpose) **in a single call** with 3 s
 2. Receives the target (absolute file paths, full diff in the prompt, or read instruction)
 3. Returns a structured report in the format defined below
 
-**Critical:** the agents are AGNOSTIC. They share no context with each other or with the main conversation. Pass them only:
+**Critical:** the agents are AGNOSTIC. They share no context with each other or with the main conversation, and **NEVER** receive `.magi/report.md` or any prior finding. Fresh review only. Pass them only:
 - Their role file
 - The code/diff to review (paths or content)
 - The output language
 
-### Step 3 — Load previous report (if it exists)
-Look for `.magi/report.md` in the target root. If it exists:
+### Step 3 — After agents return, load previous report (if it exists)
+Only AFTER the 3 agents have returned their findings, look for `.magi/report.md` in the target root. If it exists:
 1. Read it and build a set of already-closed findings (marked `false positive`, `by design`, or `fixed: ...`).
-2. You'll pass them to synthesis to filter duplicates.
+2. Use it in synthesis to filter duplicates from what the agents just reported.
 
 ### Step 4 — Synthesize + persist
 When the 3 reports return:
@@ -154,5 +154,5 @@ When the user marks a finding (`false positive` / `by design` / `fixed`), update
 6. **Language consistent** in all output per the conversation.
 7. **Cite file:line** on each finding when possible.
 8. **One persistent report per target.** Always `.magi/report.md` at the root.
-9. **Filter closed findings** at the start of each run (do not re-report `false positive` / `by design` / `fixed`).
+9. **Filter closed findings ONLY AFTER agents return.** Never inject the previous report into agent prompts. The orchestrator (Claude Code) is the one that filters — the agents always do a fresh review.
 10. **Update the md on the fly** when the user marks status changes.
