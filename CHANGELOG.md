@@ -4,6 +4,17 @@ All notable changes to this skill are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] — 2026-08-31
+
+### Changed
+- **Per-session report folder**: reports now live in `.magi/<session-id>/report.md` instead of `.magi/report.md`. Prevents collisions when multiple concurrent Claude Code chats review the same repo.
+- Session id resolved from env var `CLAUDE_SESSION_ID` when available; otherwise a short generated slug kept in memory for the chat lifetime.
+- Rule 8 updated: "One persistent report per session" (was "per target").
+
+### Notes
+- Carry-over of `false positive` / `by design` / `fixed` findings still works across multiple `/magi` runs within the same chat.
+- Cross-chat carry-over is intentionally NOT supported to keep sessions isolated.
+
 ## [2.1.0] — 2026-08-26
 
 ### Changed

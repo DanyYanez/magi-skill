@@ -1,11 +1,11 @@
 ---
 name: magi
-description: Launches 3 parallel sub-agents (Melchior, Balthasar, Casper) inspired by NERV's MAGI system from Neon Genesis Evangelion. Each reviews code/PRs/features from a distinct perspective and returns severity-classified findings. Claude Code synthesizes all three into a single report and persists it to `.magi/report.md` so future runs can skip already-resolved findings. Use when the user invokes /magi, asks for a "deep code review", wants multi-perspective analysis, or says "launch the magi" on a file, diff, PR or feature.
+description: Launches 3 parallel sub-agents (Melchior, Balthasar, Casper) inspired by NERV's MAGI system from Neon Genesis Evangelion. Each reviews code/PRs/features from a distinct perspective and returns severity-classified findings. Claude Code synthesizes all three into a single report and persists it to `.magi/<session-id>/report.md` so future runs can skip already-resolved findings. Use when the user invokes /magi, asks for a "deep code review", wants multi-perspective analysis, or says "launch the magi" on a file, diff, PR or feature.
 ---
 
 # MAGI — Multi-perspective review system
 
-Inspired by NERV's three MAGI supercomputers in Neon Genesis Evangelion (Melchior, Balthasar, Casper). Each agent represents a different facet of analysis. All three run **in parallel, without prior conversation context**, and deliver findings classified by severity. You (Claude Code) synthesize the reports, present them in a single consolidated report, and persist that report to `.magi/report.md` so future runs carry state forward.
+Inspired by NERV's three MAGI supercomputers in Neon Genesis Evangelion (Melchior, Balthasar, Casper). Each agent represents a different facet of analysis. All three run **in parallel, without prior conversation context**, and deliver findings classified by severity. You (Claude Code) synthesize the reports, present them in a single consolidated report, and persist that report to `.magi/<session-id>/report.md` so future runs carry state forward.
 
 ---
 
@@ -27,6 +27,22 @@ Do NOT use for:
 ## Language
 
 **Detect the conversation language** and use it in ALL output (agent prompts, final report, headers). If the conversation is in Spanish, everything in Spanish. If in English, everything in English. If unsure, ask once.
+
+---
+
+## Session isolation
+
+Each Claude Code chat is its own session. Reports live in a per-session folder to prevent collisions between concurrent chats reviewing the same repo:
+
+```
+.magi/<session-id>/report.md
+```
+
+**Resolving `<session-id>`**:
+1. Read the env var `CLAUDE_SESSION_ID` if available.
+2. Otherwise, generate a short slug (e.g. `s-YYYYMMDD-HHMMSS-<random4>`) the first time you write to `.magi/` this session and keep it in memory for the rest of the chat.
+
+Do NOT reuse folders across chats. Do NOT delete other sessions' folders. Each chat owns exactly one folder.
 
 ---
 
@@ -76,13 +92,13 @@ Use the Task tool (subagent_type: general-purpose) **in a single call** with 3 s
 2. Receives the target (absolute file paths, full diff in the prompt, or read instruction)
 3. Returns a structured report in the format defined below
 
-**Critical:** the agents are AGNOSTIC. They share no context with each other or with the main conversation, and **NEVER** receive `.magi/report.md` or any prior finding. Fresh review only. Pass them only:
+**Critical:** the agents are AGNOSTIC. They share no context with each other or with the main conversation, and **NEVER** receive `.magi/<session-id>/report.md` or any prior finding. Fresh review only. Pass them only:
 - Their role file
 - The code/diff to review (paths or content)
 - The output language
 
 ### Step 3 — After agents return, load previous report (if it exists)
-Only AFTER the 3 agents have returned their findings, look for `.magi/report.md` in the target root. If it exists:
+Only AFTER the 3 agents have returned their findings, look for `.magi/<session-id>/report.md` in the target root. If it exists:
 1. Read it and build a set of already-closed findings (marked `false positive`, `by design`, or `fixed: ...`).
 2. Use it in synthesis to filter duplicates from what the agents just reported.
 
@@ -90,10 +106,10 @@ Only AFTER the 3 agents have returned their findings, look for `.magi/report.md`
 When the 3 reports return:
 1. Discard findings already closed in the previous report (match by file:line + similar title).
 2. Keep `pending` findings from the previous report.
-3. Write/update `.magi/report.md` using the format below (create `.magi/` if it doesn't exist).
+3. Write/update `.magi/<session-id>/report.md` using the format below (create `.magi/` if it doesn't exist).
 4. Show the consolidated report to the user **on screen** (don't just dump the path, show content).
 
-## Persistent report format (`.magi/report.md`)
+## Persistent report format (`.magi/<session-id>/report.md`)
 
 ```
 # 🔮 MAGI Report
@@ -140,7 +156,7 @@ The tag at the start of the title (in brackets) reflects the status for quick se
 ### Step 5 — Wait for user decision + update the md
 After showing the report, **STOP**. Do not make automatic changes. Ask which finding to tackle first. The user decides.
 
-When the user marks a finding (`false positive` / `by design` / `fixed`), update `.magi/report.md` in the same moment (inline edit on the file, do not rewrite the whole thing).
+When the user marks a finding (`false positive` / `by design` / `fixed`), update `.magi/<session-id>/report.md` in the same moment (inline edit on the file, do not rewrite the whole thing).
 
 ---
 
@@ -153,6 +169,6 @@ When the user marks a finding (`false positive` / `by design` / `fixed`), update
 5. **DO NOT fix anything automatically.** The user decides what to touch.
 6. **Language consistent** in all output per the conversation.
 7. **Cite file:line** on each finding when possible.
-8. **One persistent report per target.** Always `.magi/report.md` at the root.
+8. **One persistent report per session.** Always `.magi/<session-id>/report.md` at the target root. One folder per chat, never shared.
 9. **Filter closed findings ONLY AFTER agents return.** Never inject the previous report into agent prompts. The orchestrator (Claude Code) is the one that filters — the agents always do a fresh review.
 10. **Update the md on the fly** when the user marks status changes.
