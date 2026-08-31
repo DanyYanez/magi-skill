@@ -4,6 +4,13 @@ All notable changes to this skill are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] — 2026-08-26
+
+### Changed
+- **Reinforced agent isolation**: agents NEVER receive `.magi/report.md` or any prior finding. They always do a fresh review. Only the orchestrator filters findings, and only AFTER agents return. This prevents the previous report from biasing the analysis.
+- Step 3 renamed to `After agents return, load previous report` to make timing explicit.
+- Rule 9 rewritten to state the filtering happens ONLY post-agents.
+
 ## [2.0.0] — 2026-08-26
 
 ### Added
